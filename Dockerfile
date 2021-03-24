@@ -1,5 +1,5 @@
 FROM node:8-alpine
-MAINTAINER reruin
+MAINTAINER evrstr <429427989yiqi@gmail.com>
 
 ADD . /sharelist/
 WORKDIR /sharelist
