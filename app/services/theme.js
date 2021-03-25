@@ -37,8 +37,7 @@ const renderMiddleware = ({ dir }) => (ctx, next) => {
         custom_style: getConfig('custom_style'),
         custom_script: getConfig('custom_script'),
         custom_githubAddr: process.env.GITHUBADDR,
-        custom_BLOGADDR: process.env.BLOGADDR,
-        custom_BLOGADDR: process.env.BLOGNAME,
+        custom_COPYRIGHT: process.env.COPYRIGHT,
       }
     }
     return render(ctx, path.resolve(dir, options.theme, 'view', relPath + '.pug'), data)
