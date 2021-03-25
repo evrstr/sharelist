@@ -7,64 +7,65 @@ const pug = require('pug')
 const mime = require('mime')
 const crypto = require('crypto')
 
-const { getConfig , setConfig } = require('../config')
+const { getConfig, setConfig } = require('../config')
 
 const options = {
-  theme:'default',
-  dir:'',
-  cacheStore:{},
-  staticMap:{}
+  theme: 'default',
+  dir: '',
+  cacheStore: {},
+  staticMap: {}
 }
 
 const bootTime = Date.now()
 
-const render = (ctx, filename , locals = {}) => {
+const render = (ctx, filename, locals = {}) => {
   const state = Object.assign(locals, ctx.state || {})
-  pug.renderFile(filename , state, (err, html) => {
+  pug.renderFile(filename, state, (err, html) => {
     ctx.type = 'text/html'
     ctx.body = html
   })
 }
 
 const renderMiddleware = ({ dir }) => (ctx, next) => {
-  if(ctx.renderSkin) return next()
-  ctx.response.renderSkin = ctx.renderSkin = (relPath , extra = {}) => {
-    let data = { 
-      ...extra , 
-      __path__:dir,
-      __timestamp__:bootTime,
-      g_config:{
-        custom_style:getConfig('custom_style'),
-        custom_script:getConfig('custom_script'),
+  if (ctx.renderSkin) return next()
+  ctx.response.renderSkin = ctx.renderSkin = (relPath, extra = {}) => {
+    let data = {
+      ...extra,
+      __path__: dir,
+      __timestamp__: bootTime,
+      g_config: {
+        custom_style: getConfig('custom_style'),
+        custom_script: getConfig('custom_script'),
+        custom_githubAddr: process.env.GITHUBADDR,
       }
     }
-    return render(ctx, path.resolve(dir, options.theme, 'view',relPath+'.pug') , data)
+    return render(ctx, path.resolve(dir, options.theme, 'view', relPath + '.pug'), data)
   }
   return next()
 }
 
 
-const lessMiddleware = (url , options) => (ctx, next) => new Promise(function (resolve, reject) {
-  less(url , options)(ctx.req, ctx.res , (error) =>{
-    if(error){
+const lessMiddleware = (url, options) => (ctx, next) => new Promise(function (resolve, reject) {
+  less(url, options)(ctx.req, ctx.res, (error) => {
+    if (error) {
       reject(error);
-    }else{
+    } else {
       resolve();
     }
   })
-}).then(()=>{
+}).then(() => {
   return next();
 })
 
-const staticCacheMiddleware = ({maxage , dir}) => staticCache(dir, {maxage, preload:false }, {
-  get(key){
+const staticCacheMiddleware = ({ maxage, dir }) => staticCache(dir, { maxage, preload: false }, {
+  get(key) {
     //let pathname = path.normalize(path.join(options.prefix, name))
     if (!options.cacheStore[key]) options.cacheStore[key] = {}
 
     let obj = options.cacheStore[key]
 
-    let filename = obj.path = options.staticMap[key] || path.join(dir, options.theme,key)
-    let stats , buffer
+    let filename = obj.path = options.staticMap[key] || path.join(dir, options.theme, key)
+    let stats, buffer
     try {
       stats = fs.statSync(filename)
       buffer = fs.readFileSync(filename)
@@ -82,24 +83,24 @@ const staticCacheMiddleware = ({maxage , dir}) => staticCache(dir, {maxage, prel
 
     return obj
   },
-  set(key, value){
+  set(key, value) {
     cacheStore[key] = value
   }
 })
 
-const themeManager = (app , { dir } = {}) => {
+const themeManager = (app, { dir } = {}) => {
   options.theme = getConfig('theme') || 'default'
   options.dir = dir
 
   let dest = os.tmpdir() + '/sharelist'
 
-  app.use(lessMiddleware(dir , { 
+  app.use(lessMiddleware(dir, {
     dest,
-    preprocess:{
-      path:(src, req) => {
-        let relpath = path.relative(dir,src)
-        let p =  path.resolve(dir,options.theme,relpath)
-        options.staticMap[ path.sep + relpath.replace('.less','.css') ] = path.resolve(dest,relpath.replace('.less','.css'))
+    preprocess: {
+      path: (src, req) => {
+        let relpath = path.relative(dir, src)
+        let p = path.resolve(dir, options.theme, relpath)
+        options.staticMap[path.sep + relpath.replace('.less', '.css')] = path.resolve(dest, relpath.replace('.less', '.css'))
         return p
       }
     }
@@ -107,7 +108,7 @@ const themeManager = (app , { dir } = {}) => {
 
   app.use(renderMiddleware({ dir }))
 
-  app.use(staticCacheMiddleware({ dir, maxage : 30 * 24 * 60 * 60}))
+  app.use(staticCacheMiddleware({ dir, maxage: 30 * 24 * 60 * 60 }))
 
 }
 
@@ -116,19 +117,19 @@ themeManager.getTheme = (theme) => {
 }
 
 themeManager.setTheme = (theme) => {
-  if( theme && options.theme != theme ){
+  if (theme && options.theme != theme) {
     options.theme = theme
-    setConfig({theme})
+    setConfig({ theme })
   }
 }
 
 themeManager.getThemes = (theme) => {
   let ret = []
-  try{
+  try {
     const files = fs.readdirSync(options.dir)
     return files
-  }catch(e){}
-  
+  } catch (e) { }
+
   return ret
 }
 
