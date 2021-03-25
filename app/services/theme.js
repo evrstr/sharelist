@@ -38,6 +38,7 @@ const renderMiddleware = ({ dir }) => (ctx, next) => {
         custom_script: getConfig('custom_script'),
         custom_githubAddr: process.env.GITHUBADDR,
         custom_BLOGADDR: process.env.BLOGADDR,
+        custom_BLOGADDR: process.env.BLOGNAME,
       }
     }
     return render(ctx, path.resolve(dir, options.theme, 'view', relPath + '.pug'), data)
